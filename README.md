@@ -14,7 +14,7 @@ This React application is a Kanban-style task manager. It allows users to create
 To get started with this project, clone the repository and install the dependencies:
 
 ```sh
-git clone <repository-url>
+git clone https://github.com/saranshhalwai/task-manager
 cd task-manager
 npm install 
 ```
