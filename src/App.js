@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { FaTrash, FaClock, FaTag } from 'react-icons/fa'; // Removed FaLightbulb
 
 function App() {
   const [tasks, setTasks] = useState({
@@ -8,14 +10,19 @@ function App() {
     Done: [],
   });
 
+  const [darkMode, setDarkMode] = useState(false);
+
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
     if (savedTasks) setTasks(savedTasks);
+    const savedMode = JSON.parse(localStorage.getItem('darkMode'));
+    if (savedMode) setDarkMode(savedMode);
   }, []);
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [tasks, darkMode]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,7 +31,7 @@ function App() {
       title: e.target.taskTitle.value,
       description: e.target.taskDescription.value,
       deadline: e.target.taskDeadline.value,
-      tags: e.target.taskTags.value.split(","),
+      tag: e.target.taskTag.value,
       difficulty: e.target.taskDifficulty.value,
     };
     setTasks((prev) => ({
@@ -34,7 +41,12 @@ function App() {
     e.target.reset();
   };
 
+  const onDragStart = () => {
+    document.body.style.userSelect = 'none';
+  };
+
   const onDragEnd = (result) => {
+    console.log("Drag result:", result); // Log the drag result
     const { source, destination } = result;
     if (!destination) return;
 
@@ -56,72 +68,95 @@ function App() {
         [destination.droppableId]: destColumn,
       }));
     }
+    document.body.style.userSelect = 'auto';
   };
 
   const deleteTask = (column, index) => {
-    const updatedColumn = tasks[column].filter((_, i) => i !== index);
-    setTasks((prev) => ({
-      ...prev,
-      [column]: updatedColumn,
-    }));
+    setTasks((prev) => {
+      const updatedColumn = [...prev[column]];
+      updatedColumn.splice(index, 1);
+      return {
+        ...prev,
+        [column]: updatedColumn,
+      };
+    });
   };
 
   return (
-    <div className="container">
-      <nav className="navbar navbar-expand-lg navbar-light bg-light mb-4">
-        <div className="container-fluid">
-          <span className="navbar-brand">Task Manager</span>
+    <div className={darkMode ? 'bg-dark text-white min-vh-100' : 'bg-light text-dark min-vh-100'}>
+      <div className="container py-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1>Task Manager</h1>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setDarkMode((prev) => !prev)}
+          >
+            {darkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
         </div>
-      </nav>
 
-      <h4>Create New Task</h4>
-      <form onSubmit={handleSubmit} className="mb-4">
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label htmlFor="taskTitle" className="form-label">Task Title</label>
-            <input type="text" className="form-control" id="taskTitle" required />
+        <form onSubmit={handleSubmit} className="mb-4">
+          <div className="row g-3">
+            <div className="col-md-3">
+              <input
+                type="text"
+                className="form-control"
+                id="taskTitle"
+                placeholder="Task Title"
+                required
+              />
+            </div>
+            <div className="col-md-3">
+              <input
+                type="text"
+                className="form-control"
+                id="taskDescription"
+                placeholder="Task Description"
+                required
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                type="date"
+                className="form-control"
+                id="taskDeadline"
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                type="text"
+                className="form-control"
+                id="taskTag"
+                placeholder="Tag"
+              />
+            </div>
+            <div className="col-md-2">
+              <select className="form-select" id="taskDifficulty" required>
+                <option value="Easy" style={{ color: 'green' }}>Easy</option>
+                <option value="Medium" style={{ color: 'orange' }}>Medium</option>
+                <option value="Hard" style={{ color: 'red' }}>Hard</option>
+              </select>
+            </div>
           </div>
-          <div className="col-md-6 mb-3">
-            <label htmlFor="taskDeadline" className="form-label">Deadline</label>
-            <input type="date" className="form-control" id="taskDeadline" required />
-          </div>
-        </div>
-        <div className="mb-3">
-          <label htmlFor="taskDescription" className="form-label">Task Description</label>
-          <textarea className="form-control" id="taskDescription" required></textarea>
-        </div>
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label htmlFor="taskTags" className="form-label">Tags (comma-separated)</label>
-            <input type="text" className="form-control" id="taskTags" />
-          </div>
-          <div className="col-md-6 mb-3">
-            <label htmlFor="taskDifficulty" className="form-label">Difficulty</label>
-            <select className="form-select" id="taskDifficulty">
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" className="btn btn-primary">Add Task</button>
-      </form>
+          <button type="submit" className="btn btn-primary mt-3">Add Task</button>
+        </form>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="row">
-          {Object.keys(tasks).map((status) => (
-            <div key={status} className="col-md-4">
-              <div className="card">
-                <div className="card-header text-center bg-primary text-white">
-                  {status}
-                </div>
+        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+          <div className="row">
+            {Object.keys(tasks).map((status) => (
+              <div key={status} className="col-md-4">
+                <h3 className="text-center">{status}</h3>
                 <Droppable droppableId={status}>
                   {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className="card-body"
-                      style={{ minHeight: '200px', backgroundColor: '#f8f9fa' }}
+                      className="p-3 rounded"
+                      style={{
+                        minHeight: '300px',
+                        background: darkMode ? '#343a40' : '#f8f9fa',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      }}
                     >
                       {tasks[status].map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -130,31 +165,47 @@ function App() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`card mb-2 border-${
-                                task.difficulty === 'Easy'
-                                  ? 'success'
-                                  : task.difficulty === 'Medium'
-                                  ? 'warning'
-                                  : 'danger'
-                              }`}
+                              className="card mb-3 task-card"
+                              style={{
+                                borderLeft: `5px solid ${
+                                  task.difficulty === 'Easy'
+                                    ? 'green'
+                                    : task.difficulty === 'Medium'
+                                    ? 'orange'
+                                    : 'red'
+                                }`,
+                                ...provided.draggableProps.style
+                              }}
                             >
                               <div className="card-body">
-                                <h5 className="card-title">{task.title}</h5>
+                                <h5 className="card-title d-flex justify-content-between">
+                                  {task.title}
+                                  <FaTrash
+                                    className="text-danger"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => deleteTask(status, index)}
+                                  />
+                                </h5>
                                 <p className="card-text">{task.description}</p>
-                                <p className="card-text">
-                                  <strong>Deadline:</strong> {task.deadline}
-                                </p>
-                                {task.tags.length > 0 && (
-                                  <p className="card-text">
-                                    <strong>Tags:</strong> {task.tags.join(', ')}
-                                  </p>
+                                {task.deadline && (
+                                  <div className="badge bg-warning text-dark">
+                                    <FaClock /> {task.deadline}
+                                  </div>
                                 )}
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => deleteTask(status, index)}
-                                >
-                                  Delete
-                                </button>
+                                {task.tag && (
+                                  <div className="badge bg-info text-dark ms-2">
+                                    <FaTag /> {task.tag}
+                                  </div>
+                                )}
+                                <div className="mt-2">
+                                  <span className={`badge ${
+                                    task.difficulty === 'Easy'
+                                      ? 'bg-success'
+                                      : task.difficulty === 'Medium'
+                                      ? 'bg-warning'
+                                      : 'bg-danger'
+                                  }`}>{task.difficulty}</span>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -165,10 +216,10 @@ function App() {
                   )}
                 </Droppable>
               </div>
-            </div>
-          ))}
-        </div>
-      </DragDropContext>
+            ))}
+          </div>
+        </DragDropContext>
+      </div>
     </div>
   );
 }
