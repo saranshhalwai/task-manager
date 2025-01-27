@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaTrash, FaClock, FaTag } from 'react-icons/fa'; // Removed FaLightbulb
+import { FaTrash, FaClock, FaTag } from 'react-icons/fa';
 
 function App() {
   const [tasks, setTasks] = useState({
@@ -11,6 +11,8 @@ function App() {
   });
 
   const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState('');
 
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
@@ -41,12 +43,8 @@ function App() {
     e.target.reset();
   };
 
-  const onDragStart = () => {
-    document.body.style.userSelect = 'none';
-  };
-
   const onDragEnd = (result) => {
-    console.log("Drag result:", result); // Log the drag result
+    document.body.style.userSelect = 'auto';
     const { source, destination } = result;
     if (!destination) return;
 
@@ -68,7 +66,6 @@ function App() {
         [destination.droppableId]: destColumn,
       }));
     }
-    document.body.style.userSelect = 'auto';
   };
 
   const deleteTask = (column, index) => {
@@ -82,6 +79,25 @@ function App() {
     });
   };
 
+  const filteredAndSortedTasks = (columnTasks) => {
+    let filteredTasks = columnTasks.filter((task) =>
+      task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (sortOption === 'title') {
+      filteredTasks.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOption === 'deadline') {
+      filteredTasks.sort((a, b) =>
+        a.deadline && b.deadline ? new Date(a.deadline) - new Date(b.deadline) : 0
+      );
+    } else if (sortOption === 'difficulty') {
+      const difficultyOrder = { Easy: 1, Medium: 2, Hard: 3 };
+      filteredTasks.sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]);
+    }
+
+    return filteredTasks;
+  };
+
   return (
     <div className={darkMode ? 'bg-dark text-white min-vh-100' : 'bg-light text-dark min-vh-100'}>
       <div className="container py-4">
@@ -93,6 +109,26 @@ function App() {
           >
             {darkMode ? 'Light Mode' : 'Dark Mode'}
           </button>
+        </div>
+
+        <div className="d-flex mb-4">
+          <input
+            type="text"
+            className="form-control me-3"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <select
+            className="form-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="">Sort By</option>
+            <option value="title">Title</option>
+            <option value="deadline">Deadline</option>
+            <option value="difficulty">Difficulty</option>
+          </select>
         </div>
 
         <form onSubmit={handleSubmit} className="mb-4">
@@ -141,7 +177,7 @@ function App() {
           <button type="submit" className="btn btn-primary mt-3">Add Task</button>
         </form>
 
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+        <DragDropContext onDragEnd={onDragEnd} onDragStart={() => document.body.style.userSelect = 'none'}>
           <div className="row">
             {Object.keys(tasks).map((status) => (
               <div key={status} className="col-md-4">
@@ -158,7 +194,7 @@ function App() {
                         boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                       }}
                     >
-                      {tasks[status].map((task, index) => (
+                      {filteredAndSortedTasks(tasks[status]).map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided) => (
                             <div
@@ -174,7 +210,6 @@ function App() {
                                     ? 'orange'
                                     : 'red'
                                 }`,
-                                ...provided.draggableProps.style
                               }}
                             >
                               <div className="card-body">
