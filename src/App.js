@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaTrash, FaClock, FaTag } from 'react-icons/fa';
+import { FaTrash, FaClock, FaTag, FaEdit } from 'react-icons/fa';
 
 function App() {
   const [tasks, setTasks] = useState({
@@ -13,6 +13,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('');
+  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
@@ -34,7 +35,7 @@ function App() {
       description: e.target.taskDescription.value,
       deadline: e.target.taskDeadline.value,
       tag: e.target.taskTag.value,
-      difficulty: e.target.taskDifficulty.value,
+      priority: e.target.taskPriority.value,
     };
     setTasks((prev) => ({
       ...prev,
@@ -79,6 +80,33 @@ function App() {
     });
   };
 
+  const editTask = (column, index) => {
+    const taskToEdit = tasks[column][index];
+    setEditingTask({ ...taskToEdit, column, index });
+  };
+
+  const saveTaskEdit = (e) => {
+    e.preventDefault();
+    const updatedTask = {
+      ...editingTask,
+      title: e.target.taskTitle.value,
+      description: e.target.taskDescription.value,
+      deadline: e.target.taskDeadline.value,
+      tag: e.target.taskTag.value,
+      priority: e.target.taskPriority.value,
+    };
+
+    setTasks((prev) => {
+      const updatedColumn = [...prev[editingTask.column]];
+      updatedColumn[editingTask.index] = updatedTask;
+      return {
+        ...prev,
+        [editingTask.column]: updatedColumn,
+      };
+    });
+    setEditingTask(null);
+  };
+
   const filteredAndSortedTasks = (columnTasks) => {
     let filteredTasks = columnTasks.filter((task) =>
       task.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -90,9 +118,9 @@ function App() {
       filteredTasks.sort((a, b) =>
         a.deadline && b.deadline ? new Date(a.deadline) - new Date(b.deadline) : 0
       );
-    } else if (sortOption === 'difficulty') {
-      const difficultyOrder = { Easy: 1, Medium: 2, Hard: 3 };
-      filteredTasks.sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]);
+    } else if (sortOption === 'priority') {
+      const priorityOrder = { Low: 1, Medium: 2, High: 3 };
+      filteredTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
     }
 
     return filteredTasks;
@@ -127,11 +155,11 @@ function App() {
             <option value="">Sort By</option>
             <option value="title">Title</option>
             <option value="deadline">Deadline</option>
-            <option value="difficulty">Difficulty</option>
+            <option value="priority">Priority</option>
           </select>
         </div>
 
-        <form onSubmit={handleSubmit} className="mb-4">
+        <form onSubmit={editingTask ? saveTaskEdit : handleSubmit} className="mb-4">
           <div className="row g-3">
             <div className="col-md-3">
               <input
@@ -139,6 +167,7 @@ function App() {
                 className="form-control"
                 id="taskTitle"
                 placeholder="Task Title"
+                defaultValue={editingTask?.title || ''}
                 required
               />
             </div>
@@ -148,6 +177,7 @@ function App() {
                 className="form-control"
                 id="taskDescription"
                 placeholder="Task Description"
+                defaultValue={editingTask?.description || ''}
                 required
               />
             </div>
@@ -156,6 +186,7 @@ function App() {
                 type="date"
                 className="form-control"
                 id="taskDeadline"
+                defaultValue={editingTask?.deadline || ''}
               />
             </div>
             <div className="col-md-2">
@@ -164,17 +195,25 @@ function App() {
                 className="form-control"
                 id="taskTag"
                 placeholder="Tag"
+                defaultValue={editingTask?.tag || ''}
               />
             </div>
             <div className="col-md-2">
-              <select className="form-select" id="taskDifficulty" required>
-                <option value="Easy" style={{ color: 'green' }}>Easy</option>
+              <select
+                className="form-select"
+                id="taskPriority"
+                defaultValue={editingTask?.priority || ''}
+                required
+              >
+                <option value="Low" style={{ color: 'green' }}>Low</option>
                 <option value="Medium" style={{ color: 'orange' }}>Medium</option>
-                <option value="Hard" style={{ color: 'red' }}>Hard</option>
+                <option value="High" style={{ color: 'red' }}>High</option>
               </select>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary mt-3">Add Task</button>
+          <button type="submit" className="btn btn-primary mt-3">
+            {editingTask ? 'Save Changes' : 'Add Task'}
+          </button>
         </form>
 
         <DragDropContext onDragEnd={onDragEnd} onDragStart={() => document.body.style.userSelect = 'none'}>
@@ -204,9 +243,9 @@ function App() {
                               className="card mb-3 task-card"
                               style={{
                                 borderLeft: `5px solid ${
-                                  task.difficulty === 'Easy'
+                                  task.priority === 'Low'
                                     ? 'green'
-                                    : task.difficulty === 'Medium'
+                                    : task.priority === 'Medium'
                                     ? 'orange'
                                     : 'red'
                                 }`,
@@ -215,15 +254,28 @@ function App() {
                               <div className="card-body">
                                 <h5 className="card-title d-flex justify-content-between">
                                   {task.title}
-                                  <FaTrash
-                                    className="text-danger"
-                                    style={{ cursor: 'pointer' }}
-                                    onClick={() => deleteTask(status, index)}
-                                  />
+                                  <span>
+                                    <FaEdit
+                                      className="text-primary me-3"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => editTask(status, index)}
+                                    />
+                                    <FaTrash
+                                      className="text-danger"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => deleteTask(status, index)}
+                                    />
+                                  </span>
                                 </h5>
                                 <p className="card-text">{task.description}</p>
                                 {task.deadline && (
-                                  <div className="badge bg-warning text-dark">
+                                  <div
+                                    className={`badge ${
+                                      new Date(task.deadline) < new Date()
+                                        ? 'bg-danger'
+                                        : 'bg-warning'
+                                    } text-dark`}
+                                  >
                                     <FaClock /> {task.deadline}
                                   </div>
                                 )}
@@ -234,12 +286,12 @@ function App() {
                                 )}
                                 <div className="mt-2">
                                   <span className={`badge ${
-                                    task.difficulty === 'Easy'
+                                    task.priority === 'Low'
                                       ? 'bg-success'
-                                      : task.difficulty === 'Medium'
+                                      : task.priority === 'Medium'
                                       ? 'bg-warning'
                                       : 'bg-danger'
-                                  }`}>{task.difficulty}</span>
+                                  }`}>{task.priority}</span>
                                 </div>
                               </div>
                             </div>
