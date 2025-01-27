@@ -3,6 +3,43 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FaTrash, FaClock, FaTag, FaEdit } from 'react-icons/fa';
 
+/**
+ * The main component of the Task Manager application.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered component.
+ * 
+ * @description
+ * This component manages the state and behavior of the task manager application. It includes features such as:
+ * - Adding, editing, and deleting tasks.
+ * - Drag-and-drop functionality to move tasks between columns.
+ * - Filtering and sorting tasks based on search query and sort options.
+ * - Dark mode toggle.
+ * - Persisting tasks and dark mode preference in localStorage.
+ * 
+ * @example
+ * <App />
+ * 
+ * @function
+ * @name App
+ * 
+ * @property {Object} tasks - The state object containing tasks categorized by their status.
+ * @property {Array} tasks.ToDo - Array of tasks in the "To Do" column.
+ * @property {Array} tasks.InProgress - Array of tasks in the "In Progress" column.
+ * @property {Array} tasks.Done - Array of tasks in the "Done" column.
+ * 
+ * @property {boolean} darkMode - The state boolean indicating whether dark mode is enabled.
+ * @property {string} searchQuery - The state string for the search query to filter tasks.
+ * @property {string} sortOption - The state string for the selected sort option.
+ * @property {Object|null} editingTask - The state object for the task being edited, or null if no task is being edited.
+ * 
+ * @property {function} handleSubmit - Handles form submission to add a new task.
+ * @property {function} onDragEnd - Handles the end of a drag-and-drop action.
+ * @property {function} deleteTask - Deletes a task from a specified column.
+ * @property {function} editTask - Sets the task to be edited.
+ * @property {function} saveTaskEdit - Saves the edited task.
+ * @property {function} filteredAndSortedTasks - Filters and sorts tasks based on search query and sort option.
+ */
 function App() {
   const [tasks, setTasks] = useState({
     ToDo: [],
@@ -15,6 +52,9 @@ function App() {
   const [sortOption, setSortOption] = useState('');
   const [editingTask, setEditingTask] = useState(null);
 
+  /**
+   * Load tasks and dark mode preference from localStorage on component mount.
+   */
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem('tasks'));
     if (savedTasks) setTasks(savedTasks);
@@ -22,11 +62,19 @@ function App() {
     if (savedMode) setDarkMode(savedMode);
   }, []);
 
+  /**
+   * Save tasks and dark mode preference to localStorage whenever they change.
+   */
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [tasks, darkMode]);
 
+  /**
+   * Handle form submission to add a new task.
+   * 
+   * @param {React.FormEvent<HTMLFormElement>} e - The form submission event.
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     const newTask = {
