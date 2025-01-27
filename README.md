@@ -1,13 +1,18 @@
 # Kanban Task Manager
 
-This React application is a Kanban-style task manager. It allows users to create, manage, and organize tasks into different columns such as "ToDo", "InProgress", and "Done". The application supports drag-and-drop functionality for moving tasks between columns and uses cookies to persist tasks across sessions.
+## Overview
+
+This React application is a Kanban-style task manager. It allows users to create, manage, and organize tasks into different columns such as "ToDo", "InProgress", and "Done". The application supports drag-and-drop functionality for moving tasks between columns and uses localStorage to persist tasks and dark mode preference across sessions.
 
 ## Features
 
-- **Task Creation**: Easily create new tasks with a title and description.
+- **Task Creation**: Easily create new tasks with a title, description, deadline, tag, and priority.
 - **Drag and Drop**: Seamlessly move tasks between different columns.
-- **Task Management**: Delete tasks as needed.
-- **Persistent Storage**: Tasks are saved in cookies and reloaded on page refresh.
+- **Task Management**: Edit and delete tasks as needed.
+- **Persistent Storage**: Tasks and dark mode preference are saved in localStorage and reloaded on page refresh.
+- **Dark Mode**: Toggle between light and dark mode for better accessibility.
+
+This React application is a Kanban-style task manager. It allows users to create, manage, and organize tasks into different columns such as "ToDo", "InProgress", and "Done". The application supports drag-and-drop functionality for moving tasks between columns and uses cookies to persist tasks across sessions.
 
 ## Installation
 
@@ -43,12 +48,15 @@ src/
   App.js
   index.css
   index.js
+package-lock.json
+package.json
+LICENSE.md
 ```
 
-- `html index.html`: The main HTML file.
-- `js index.js` : The entry point for the react application.
-- `js App.js` : The main component containing the Kanban board logic.
-- `css index.css` : Optional CSS for styling.
+- `index.html`: The main HTML file.
+- `index.js` : The entry point for the react application.
+- `App.js` : The main component containing the Kanban board logic.
+- `index.css` : Optional CSS for styling.
 
 ## Dependencies
 
